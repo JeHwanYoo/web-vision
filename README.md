@@ -21,7 +21,7 @@ $ npm run start
 
 For detailed explanation on how things work, check out [Nuxt.js docs](https://nuxtjs.org).
 
-## setting .env
+## Setting .env
 
 Create a [.env file](https://www.npmjs.com/package/dotenv) on top of your project.
 
@@ -33,7 +33,7 @@ LIMIT_BODY_SIZE = 10mb
 | :-------------: | :-------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | LIMIT_BODY_SIZE | Memory Representation | After encoding the image as base64, you need to allow enough body size to be sent to the server. If the image size is larger than the allowed size, a 413 error will occur. |
 
-## using opencv-python
+## Using opencv-python
 
 This project requires [opencv-python](https://pypi.org/project/opencv-python/).
 
