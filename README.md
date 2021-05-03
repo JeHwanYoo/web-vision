@@ -43,7 +43,7 @@ If you are hosting online, consider the cost issue.
 
 ## Main Development Progress
 
-- [v] Basic Image Processing (0.1.x)
+- [x] Basic Image Processing (0.1.x)
 - [ ] Multiple File Support (0.2.x)
 - [ ] Histogram (0.3.x)
 - [ ] Filtering (0.4.x)
