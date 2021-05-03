@@ -26,6 +26,8 @@
     </v-main>
     <v-footer :absolute="!fixed" app>
       <span>{{ copyright }}</span>
+      &nbsp; &nbsp;
+      <span>{{ version }}</span>
       <v-spacer></v-spacer>
       <span>
         <v-btn
@@ -43,6 +45,7 @@
 
 <script lang="ts">
 import { Vue, Component } from 'vue-property-decorator'
+import project from '~/package.json'
 
 @Component
 export default class DefaultLayout extends Vue {
@@ -50,7 +53,7 @@ export default class DefaultLayout extends Vue {
   app = true
   drawer = true
   title = 'Web Vision'
-  copyright = `© JeHwanYoo ${new Date().getFullYear()}`
+  copyright = `© ${new Date().getFullYear()} JeHwan Yoo`
   naviEnabledPaths = ['editor']
 
   get isNavigationEnabled(): boolean {
@@ -59,8 +62,8 @@ export default class DefaultLayout extends Vue {
     )
   }
 
-  mounted() {
-    // console.log(this.enabled)
+  get version() {
+    return 'v ' + project.version
   }
 }
 </script>

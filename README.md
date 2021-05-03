@@ -1,5 +1,7 @@
 # web-vison
 
+It is an open source project to provide opencv function on the web.
+
 ## Build Setup
 
 This project was created using Nuxt.
