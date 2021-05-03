@@ -94,3 +94,6 @@ Lenna_*
 
 # python cache
 __pycache__
+
+# vscode
+.vscode
