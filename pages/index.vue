@@ -4,16 +4,21 @@
       <v-img class="my-5 mx-auto" src="/logo.png" width="324px" height="400px">
       </v-img>
     </v-col>
-    <v-col cols="12" v-show="isLoading">
-      Load Image ({{ loaded }} / {{ expected }})
+    <v-col class="text-center" cols="12" v-show="isLoading">
+      <v-progress-circular
+        :size="100"
+        :width="20"
+        indeterminate
+        color="primary"
+      ></v-progress-circular>
     </v-col>
-    <v-col cols="8">
+    <v-col cols="8" v-show="!isLoading">
       <drag-and-drop @upload="uploaded" @metadata="metadata" />
     </v-col>
-    <v-col cols="8">
+    <v-col cols="8" v-show="!isLoading">
       <image-uploader @upload="uploaded" @metadata="metadata" />
     </v-col>
-    <v-col cols="12">
+    <v-col cols="12" v-show="!isLoading">
       <image-viewer :origin="origin" :converted="converted" />
     </v-col>
   </v-row>

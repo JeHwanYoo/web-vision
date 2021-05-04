@@ -4,6 +4,7 @@
     accept="image/png, image/jpeg"
     prepend-icon="mdi-camera"
     placeholder="Select an Image (png, jpeg)"
+    multiple
   >
   </v-file-input>
 </template>
