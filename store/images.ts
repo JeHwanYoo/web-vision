@@ -40,15 +40,16 @@ export const mutations: MutationTree<State> = {
   convertedImages(state, payload: Image) {
     state.convertedImages.push(payload)
   },
+  clearOriginImages(state) {
+    state.originImages = []
+  },
+  clearConvertedImages(state) {
+    state.convertedImages = []
+  },
+  clearImages(state) {
+    state.originImages = []
+    state.convertedImages = []
+  },
 }
 
-// export const actions: ActionTree<State, any> = {
-//   loadImages(
-//     context: ActionContext<State, any>,
-//     payload: { o: Image[]; c: Image[] },
-//   ) {
-//     context.commit('originImages', payload.o)
-//     context.commit('payload', payload.c)
-//     return true
-//   },
-// }
+export const actions: ActionTree<State, any> = {}
