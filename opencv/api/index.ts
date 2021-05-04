@@ -11,13 +11,21 @@ const app = express()
 
 app.use(
   express.json({
-    limit: process.env.LIMIT_BODY_SIZE,
+    limit: process.env.LIMIT_BODY_SIZE, // default: 10mb
   }),
 )
 
-app.post('/conversion/gray', (req, res) => {
+/**
+ * processing image middleware
+ */
+function processing(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) {
   const dataURL = req.body.dataURL
-  if (dataURL) {
+  const pythonFileName = req.body.pythonFileName
+  if (dataURL && pythonFileName) {
     const output: string[] = []
     const tmpPath = resolve(__dirname, '.tmp')
     const tmpFileName = randomstring.generate()
@@ -25,7 +33,7 @@ app.post('/conversion/gray', (req, res) => {
 
     writeFile(tmpFilePath, dataURL, () => {
       const r = exec(
-        `python3 ${resolve(__dirname, '..', 'to_gray.py')} ${tmpFilePath}`,
+        `python3 ${resolve(__dirname, '..', pythonFileName)} ${tmpFilePath}`,
       )
       let failed = false
       if (r.stdout && r.stderr) {
@@ -47,32 +55,60 @@ app.post('/conversion/gray', (req, res) => {
         r.stdout.on('end', () => {
           if (failed) {
             errorHandling(res, 400, 'Bad Request', output)
-            // unlink(tmpFilePath, () => {})
+            unlink(tmpFilePath, () => {})
           } else {
-            res.json(output)
-            // unlink(tmpFilePath, () => {})
+            req.output = output
+            next()
+            unlink(tmpFilePath, () => {})
           }
         })
       } else {
-        res.sendStatus(400)
+        errorHandling(res, 400, 'Bad Request', 'exec failed')
       }
     })
   } else {
-    res.sendStatus(400)
+    errorHandling(
+      res,
+      400,
+      'Bad Request',
+      'dataURL or pythonFileName is missing',
+      400,
+    )
   }
-})
+}
 
+/**
+ * sending output middleware
+ */
+function sendOutput(req: express.Request, res: express.Response) {
+  res.send(req.output)
+}
+
+/**
+ * processing api
+ */
+app.post('/processing', processing, sendOutput)
+
+/**
+ *
+ * @param res express.Response
+ * @param pcode error code for production
+ * @param pmessage error message for production
+ * @param dmessage error message for development
+ * @param dcode error code for development (default = 500)
+ */
 function errorHandling(
   res: express.Response,
   pcode: number,
   pmessage: string,
   dmessage: any,
+  derror: number = 500,
 ) {
   if (process.env.NODE_ENV === 'production') {
     res.status(pcode)
     res.send(pmessage)
   } else {
-    res.status(500)
+    res.status(derror)
     res.send(dmessage)
   }
 }

@@ -1,8 +1,6 @@
 import Vuex from 'vuex'
-import * as navigations from './navigations'
+import * as images from './images'
 
 export const store = new Vuex.Store({
-  modules: {
-    navigations,
-  },
+  modules: { images },
 })
