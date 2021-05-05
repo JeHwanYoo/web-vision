@@ -29,7 +29,8 @@
       "@nuxtjs/axios",
       "@types/node",
       "@types/validator",
-      "@types/randomstring"
+      "@types/randomstring",
+      "./components/FileList.d.ts"
     ]
   },
   "exclude": [

@@ -36,11 +36,9 @@ import { Getter } from 'vuex-class'
   components: { DragAndDrop, ImageUploader, ImageViewer },
 })
 export default class IndexPage extends Vue {
-  expected = 0
-  loaded = 0
-
   @Getter('images/dataURLofOrigins') origins!: string[]
   @Getter('images/dataURLofConverted') converteds!: string[]
+  @Getter('images/isLoading') isLoading!: boolean
 
   get origin() {
     return this.origins ? this.origins[0] : null
@@ -50,48 +48,34 @@ export default class IndexPage extends Vue {
     return this.converteds ? this.converteds[0] : null
   }
 
-  get isLoading() {
-    return this.expected > 0 ? this.expected !== this.loaded : false
-  }
-
   async uploaded(image: Image) {
     try {
-      const dataURL = image.dataURL
-
-      this.$store.commit('images/clearImages')
-
-      if (dataURL) {
-        const result = await this.$axios.post('/api/processing', {
-          dataURL,
-          pythonFileName: 'to_gray.py',
-        })
-        const convertedDataURL = result.data.join('')
-        this.$store.commit('images/originImages', image)
-        this.$store.commit('images/convertedImages', {
-          id: 'C:' + image.id,
-          file: image.file,
-          dataURL: convertedDataURL,
-        })
-      }
-      this.loaded++
-      if (!this.isLoading) {
-        this.loaded = 0
-        this.expected = 0
+      const newImage = await this.$store.dispatch('images/upload', {
+        image,
+        pythonFileName: 'to_gray.py',
+      })
+      if (newImage) {
+        console.log(newImage)
+      } else {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('base64 Image error')
+        }
+        alert('An error occurred while processing the image.')
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(error)
+        console.error(error)
       }
       alert('An error occurred while processing the image.')
-      this.loaded++
     }
   }
 
   metadata(fileContext: File | File[]) {
+    console.log(fileContext)
     if (fileContext instanceof File) {
-      this.expected = 1
-    } else if (fileContext) {
-      this.expected = fileContext.length
+      this.$store.commit('images/startLoading', 1)
+    } else if (fileContext.length > 0) {
+      this.$store.commit('images/startLoading', fileContext.length)
     } else {
       this.$store.commit('images/clearImages')
     }
