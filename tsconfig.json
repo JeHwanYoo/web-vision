@@ -30,7 +30,6 @@
       "@types/node",
       "@types/validator",
       "@types/randomstring",
-      "./components/FileList.d.ts"
     ]
   },
   "exclude": [
