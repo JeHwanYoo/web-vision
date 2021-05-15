@@ -1,16 +1,14 @@
 <template>
-  <div class="text-center">
-    <v-container v-if="origin && converted">
-      <v-row>
-        <v-col>
-          <v-img :src="origin"></v-img>
-        </v-col>
-        <v-col>
-          <v-img :src="converted"></v-img>
-        </v-col>
-      </v-row>
-    </v-container>
-  </div>
+  <v-container class="text-center">
+    <v-row>
+      <v-col cols="6">
+        <v-img :src="origin"></v-img>
+      </v-col>
+      <v-col cols="6">
+        <v-img :src="converted"></v-img>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script lang="ts">

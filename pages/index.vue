@@ -4,22 +4,11 @@
       <v-img class="my-5 mx-auto" src="/logo.png" width="324px" height="400px">
       </v-img>
     </v-col>
-    <v-col class="text-center" cols="12" v-show="isLoading">
-      <v-progress-circular
-        :size="100"
-        :width="20"
-        indeterminate
-        color="primary"
-      ></v-progress-circular>
-    </v-col>
-    <v-col cols="8" v-show="!isLoading">
+    <v-col cols="8">
       <drag-and-drop @upload="uploaded" @metadata="metadata" />
     </v-col>
-    <v-col cols="8" v-show="!isLoading">
+    <v-col cols="8">
       <image-uploader @upload="uploaded" @metadata="metadata" />
-    </v-col>
-    <v-col cols="12" v-show="!isLoading">
-      <image-viewer :origin="origin" :converted="converted" />
     </v-col>
   </v-row>
 </template>
@@ -36,49 +25,27 @@ import { Getter } from 'vuex-class'
   components: { DragAndDrop, ImageUploader, ImageViewer },
 })
 export default class IndexPage extends Vue {
-  @Getter('images/dataURLofOrigins') origins!: string[]
-  @Getter('images/dataURLofConverted') converteds!: string[]
-  @Getter('images/isLoading') isLoading!: boolean
+  expected = 0
 
-  get origin() {
-    return this.origins ? this.origins[0] : null
-  }
+  @Getter('images/originImages') originImages!: Image[]
 
-  get converted() {
-    return this.converteds ? this.converteds[0] : null
-  }
-
-  async uploaded(image: Image) {
-    try {
-      const newImage = await this.$store.dispatch('images/upload', {
-        image,
-        pythonFileName: 'to_gray.py',
-      })
-      if (newImage) {
-        console.log(newImage)
-      } else {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('base64 Image error')
-        }
-        alert('An error occurred while processing the image.')
-      }
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error(error)
-      }
-      alert('An error occurred while processing the image.')
+  uploaded(image: Image) {
+    this.$store.commit('images/pushOriginImages', image)
+    if (this.expected > 0 && this.expected === this.originImages.length) {
+      this.$router.replace({ name: 'editor' })
     }
   }
 
   metadata(fileContext: File | File[]) {
-    console.log(fileContext)
     if (fileContext instanceof File) {
-      this.$store.commit('images/startLoading', 1)
+      this.expected = 1
     } else if (fileContext.length > 0) {
-      this.$store.commit('images/startLoading', fileContext.length)
-    } else {
-      this.$store.commit('images/clearImages')
+      this.expected = fileContext.length
     }
+  }
+
+  mounted() {
+    console.log(this.$route)
   }
 }
 </script>

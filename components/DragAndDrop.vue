@@ -2,12 +2,13 @@
   <v-sheet
     class="drag text-center"
     height="200px"
-    color="gray"
     rounded
     @drop.prevent="onDrop"
     @dragover.prevent
     @dragenter="onDragenter"
     @dragleave="onDragleave"
+    :elevation="elevation"
+    :color="color"
   >
     Drag Image Here
   </v-sheet>
@@ -21,6 +22,8 @@ import randomstring from 'randomstring'
 @Component
 export default class DragAndDrop extends Vue {
   fileContext: File | FileList | null = null
+  elevation = 0
+  color = 'gray'
 
   @Watch('fileContext')
   onFileContextChanged(fileContext: File | FileList | null) {
@@ -52,18 +55,21 @@ export default class DragAndDrop extends Vue {
 
   onDragenter(evt: DragEvent) {
     const target = evt.target as HTMLDivElement
-    target.classList.add('dragenter')
+    this.elevation = 10
+    this.color = 'success'
   }
 
   onDragleave(evt: DragEvent) {
     const target = evt.target as HTMLDivElement
-    target.classList.remove('dragenter')
+    this.elevation = 0
+    this.color = 'gray'
   }
 
   onDrop(evt: DragEvent) {
     const target = evt.target as HTMLDivElement
     const droppedFiles = evt.dataTransfer?.files
-    target.classList.remove('dragenter')
+    this.elevation = 0
+    this.color = 'gray'
     if (droppedFiles) {
       this.fileContext = droppedFiles
     }
@@ -75,10 +81,5 @@ export default class DragAndDrop extends Vue {
 .drag {
   font-size: 2rem;
   line-height: 200px;
-  border-style: dashed;
-  border-color: gray;
-}
-.dragenter {
-  border-color: wheat;
 }
 </style>

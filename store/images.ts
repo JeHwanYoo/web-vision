@@ -1,9 +1,11 @@
-import { GetterTree, MutationTree, ActionTree, Store } from 'vuex'
+import { GetterTree, MutationTree, ActionTree } from 'vuex'
+import randomstring from 'randomstring'
 
 export interface Image {
   id: string
   file: File
   dataURL: string
+  parent?: Image
 }
 
 export interface State {
@@ -11,6 +13,7 @@ export interface State {
   convertedImages: Image[]
   expected: number
   loaded: number
+  currentCursor: string
 }
 
 export const namespaced = true
@@ -20,6 +23,7 @@ export const state: () => State = () => ({
   convertedImages: [],
   expected: 0,
   loaded: 0,
+  currentCursor: '',
 })
 
 export const getters: GetterTree<State, any> = {
@@ -44,6 +48,12 @@ export const getters: GetterTree<State, any> = {
   isLoading(state) {
     return state.expected > 0 ? state.expected !== state.loaded : false
   },
+  currentConvertedImage(state) {
+    const current = state.convertedImages.find(
+      v => v.id === state.currentCursor,
+    )
+    return current
+  },
 }
 
 export const mutations: MutationTree<State> = {
@@ -65,6 +75,9 @@ export const mutations: MutationTree<State> = {
     state.loaded = 0
     state.expected = 0
   },
+  changeCursor(state, payload: string) {
+    state.currentCursor = payload
+  },
 }
 
 export const actions: ActionTree<State, any> = {
@@ -75,8 +88,6 @@ export const actions: ActionTree<State, any> = {
     const { image, pythonFileName } = payload
     const dataURL = image.dataURL
 
-    commit('clearImages')
-
     if (dataURL) {
       const result = await this.$axios.post('/api/processing', {
         dataURL,
@@ -84,13 +95,14 @@ export const actions: ActionTree<State, any> = {
       })
       const convertedDataURL = result.data.join('')
       const newImage = {
-        id: 'C:' + image.id,
+        id: randomstring.generate(),
         file: image.file,
         dataURL: convertedDataURL,
+        parent: image,
       }
 
-      commit('pushOriginImages', image)
       commit('pushConvertedImages', newImage)
+      commit('changeCursor', newImage.id)
 
       if (!getters.isLoading) {
         commit('initLoading')
