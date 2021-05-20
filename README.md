@@ -4,7 +4,7 @@ It is an open source project to provide opencv function on the web.
 
 ## installation
 
-git clone
+git clone https://github.com/JeHwanYoo/web-vision.git
 
 ## Build Setup
 
@@ -82,7 +82,8 @@ Sometimes using a different pipeline can produce the same result. Because the re
 The plan can change at any time.
 
 ## Preview
+![Preview](https://raw.githubusercontent.com/JeHwanYoo/web-vision/main/screenshot.PNG)
 
 ## Version History
 
-See CHANGELOG.md
+See [CHANGELOG.md](https://github.com/JeHwanYoo/web-vision/blob/main/CHANGELOG.md)
