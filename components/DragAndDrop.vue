@@ -42,7 +42,6 @@ export default class DragAndDrop extends Vue {
         fileReader.addEventListener('load', e => {
           this.$emit('upload', {
             id: randomstring.generate() + Date.now().toString(),
-            file,
             dataURL: e.target?.result,
           } as Image)
         })

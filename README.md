@@ -2,6 +2,10 @@
 
 It is an open source project to provide opencv function on the web.
 
+## installation
+
+git clone
+
 ## Build Setup
 
 ![built with nuxt](https://ko.nuxtjs.org/logos/built-with-nuxt.svg)
@@ -15,6 +19,9 @@ $ npm install
 # migrate prisma (SQLite)
 $ npx prisma migrate
 
+# using prisma studio (SQLite)
+$ npx prisma studio
+
 # serve with hot reload at localhost:3000
 $ npm run dev
 
@@ -24,7 +31,7 @@ $ npm run start
 
 ```
 
-For detailed explanation on how things work, check out [Nuxt.js docs](https://nuxtjs.org).
+For detailed explanation on how things work, check out [Nuxt.js docs](https://nuxtjs.org) and [Prisma docs](https://www.prisma.io/docs/)
 
 ## Setting .env
 
@@ -53,6 +60,14 @@ In 'opencv' directory, you can expand opencv function. Basically, I haven't impl
 If necessary, it would be a good idea to make the directory a Git submodule.
 
 In 'opencv/api/client.ts' file, defines the interface of the opencv function to be executed on the client.
+
+## About image caching
+
+The same results are reused using caching.
+
+The list is incremented only if the results are different.
+
+Sometimes using a different pipeline can produce the same result. Because the results are the same.
 
 ## Main Development Progress
 

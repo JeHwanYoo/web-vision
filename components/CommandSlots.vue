@@ -5,6 +5,7 @@
       v-for="(command, index) in commandList"
       :key="index"
       @click="click(command.pythonFileName)"
+      :disabled="disabled"
       >{{ command.label }}
     </v-btn>
   </div>
@@ -17,6 +18,7 @@ import Command from '~/opencv/api/command'
 @Component
 export default class ImageViewer extends Vue {
   @Prop() commandList!: Command[]
+  @Prop({ default: false }) disabled!: boolean
 
   click(pythonFileName: string) {
     this.$emit('execute', pythonFileName)

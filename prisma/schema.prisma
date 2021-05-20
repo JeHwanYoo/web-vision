@@ -9,3 +9,12 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+model Image {
+  id        String   @id
+  createdAt DateTime @default(now())
+  dataURL   String
+  hash      String   @unique
+  parent_id String?
+  script_by String?
+}

@@ -2,7 +2,9 @@ import express from 'express'
 import { exec } from 'child_process'
 import { resolve } from 'path'
 import { config } from 'dotenv'
-import { writeFile, unlink } from 'fs'
+import { PrismaClient } from '@prisma/client'
+import { Image } from '~/store/images'
+import sha256 from 'crypto-js/sha256'
 import randomstring from 'randomstring'
 
 config()
@@ -16,73 +18,172 @@ app.use(
 )
 
 /**
+ * save an image middleware (using cache)
+ */
+async function saveImage(req: express.Request, res: express.Response) {
+  try {
+    const prisma = new PrismaClient()
+    const image: Image = req.body.image
+    const cache = await prisma.image.findUnique({
+      where: { hash: sha256(image.dataURL).toString() },
+    })
+
+    if (!cache) {
+      // create a new image data
+      await prisma.image.create({
+        data: {
+          id: image.id,
+          dataURL: image.dataURL,
+          hash: sha256(image.dataURL).toString(),
+        },
+      })
+
+      prisma.$disconnect()
+
+      res.send({ cached: false, image })
+    } else {
+      prisma.$disconnect()
+
+      // send cached image data
+      res.send({
+        cached: true,
+        image: {
+          id: cache.id,
+          dataURL: cache.dataURL,
+        },
+      })
+    }
+  } catch (error) {
+    console.log(error)
+    errorHandling(res, 400, 'Bad Request', error, 500)
+  }
+}
+
+/**
  * processing image middleware
  */
-function processing(
+async function processing(
   req: express.Request,
   res: express.Response,
   next: express.NextFunction,
 ) {
-  const dataURL = req.body.dataURL
-  const pythonFileName = req.body.pythonFileName
-  if (dataURL && pythonFileName) {
-    const output: string[] = []
-    const tmpPath = resolve(__dirname, '.tmp')
-    const tmpFileName = randomstring.generate()
-    const tmpFilePath = resolve(tmpPath, tmpFileName)
+  try {
+    const prisma = new PrismaClient()
+    const image: Image = req.body.image
+    const pythonFileName: string = req.body.pythonFileName
+    if (image && pythonFileName) {
+      const output: string[] = []
 
-    writeFile(tmpFilePath, dataURL, () => {
-      const r = exec(
-        `python3 ${resolve(__dirname, '..', pythonFileName)} ${tmpFilePath}`,
-      )
-      let failed = false
-      if (r.stdout && r.stderr) {
-        r.stdout.on('data', chunk => {
-          output.push(chunk)
-        })
-        r.stdout.on('error', error => {
-          output.push(error.toString())
-          failed = true
-        })
-        r.stderr.on('data', chunk => {
-          output.push(chunk)
-          failed = true
-        })
-        r.stderr.on('error', error => {
-          output.push(error.toString())
-          failed = true
-        })
-        r.stdout.on('end', () => {
-          if (failed) {
-            errorHandling(res, 400, 'Bad Request', output)
-            unlink(tmpFilePath, () => {})
-          } else {
-            req.output = output
-            next()
-            unlink(tmpFilePath, () => {})
-          }
-        })
+      const cached = await prisma.image.findFirst({
+        select: { id: true, dataURL: true, parent_id: true, script_by: true },
+        where: { parent_id: image.id, script_by: pythonFileName },
+      })
+
+      if (cached) {
+        req.cached = true
+        req.image = cached
+        next()
       } else {
-        errorHandling(res, 400, 'Bad Request', 'exec failed')
+        const r = exec(
+          `python3 ${resolve(__dirname, '..', pythonFileName)} ${image.id}`,
+        )
+        let failed = false
+        if (r.stdout && r.stderr) {
+          r.stdout.on('data', chunk => {
+            output.push(chunk)
+          })
+          r.stdout.on('error', error => {
+            output.push(error.toString())
+            failed = true
+          })
+          r.stderr.on('data', chunk => {
+            output.push(chunk)
+            failed = true
+          })
+          r.stderr.on('error', error => {
+            output.push(error.toString())
+            failed = true
+          })
+          r.stdout.on('end', () => {
+            if (failed) {
+              prisma.$disconnect()
+              errorHandling(res, 400, 'Bad Request', output.join(''))
+            } else {
+              prisma.$disconnect()
+              req.cached = false
+              req.image = {
+                id: randomstring.generate() + Date.now().toString(),
+                dataURL: output.join(''),
+                parent_id: image.id,
+                script_by: pythonFileName,
+              }
+              next()
+            }
+          })
+        } else {
+          prisma.$disconnect()
+          errorHandling(res, 400, 'Bad Request', 'exec failed')
+        }
       }
-    })
-  } else {
-    errorHandling(
-      res,
-      400,
-      'Bad Request',
-      'dataURL or pythonFileName is missing',
-      400,
-    )
+    } else {
+      prisma.$disconnect()
+      errorHandling(
+        res,
+        400,
+        'Bad Request',
+        'dataURL or pythonFileName is missing',
+        400,
+      )
+    }
+  } catch (error) {
+    errorHandling(res, 400, 'Bad Request', error, 500)
   }
 }
 
 /**
  * sending output middleware
  */
-function sendOutput(req: express.Request, res: express.Response) {
-  res.send(req.output)
+async function sendOutput(req: express.Request, res: express.Response) {
+  try {
+    if (!req.cached) {
+      const prisma = new PrismaClient()
+      // create a new image data
+      await prisma.image.create({
+        data: {
+          id: req.image.id,
+          dataURL: req.image.dataURL,
+          hash: sha256(req.image.dataURL).toString(),
+          parent_id: req.image.parent_id,
+          script_by: req.image.script_by,
+        },
+      })
+      prisma.$disconnect()
+    }
+
+    res.send(req.image)
+  } catch (error) {
+    // The conversion result is the same.
+    if (error.code === 'P2002') {
+      const prisma = new PrismaClient()
+
+      const cached = await prisma.image.findUnique({
+        select: { id: true, dataURL: true, parent_id: true, script_by: true },
+        where: { hash: sha256(req.image.dataURL).toString() },
+      })
+
+      prisma.$disconnect()
+
+      res.send(cached)
+    } else {
+      errorHandling(res, 400, 'Bad Request', error, 500)
+    }
+  }
 }
+
+/**
+ * checking cache image
+ */
+app.post('/image', saveImage)
 
 /**
  * processing api

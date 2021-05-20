@@ -7,6 +7,7 @@
       :key="index"
       :color="currentCursor === image ? 'primary' : 'gray'"
       @click="changeColor(image)"
+      :disabled="disabled"
     >
       <div class="image-text">
         {{ image.id }}
@@ -17,14 +18,14 @@
 
 <script lang="ts">
 import { Vue, Component, Prop } from 'vue-property-decorator'
-import { Getter, Mutation } from 'vuex-class'
 import { Image } from '~/store/images'
 
 @Component
 export default class ImageList extends Vue {
   @Prop() images!: Image[]
-  @Getter('images/currentCursor') currentCursor!: Image
-  @Mutation('images/setCursor') setCursor!: (image: Image) => void
+  @Prop({ default: false }) disabled!: boolean
+  @Prop() currentCursor!: Image
+  @Prop() setCursor!: (image: Image) => void
 
   changeColor(image: Image) {
     this.setCursor(image)
