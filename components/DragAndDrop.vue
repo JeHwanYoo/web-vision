@@ -16,39 +16,41 @@
 
 <script lang="ts">
 import { Vue, Component, Watch } from 'vue-property-decorator'
+import { Getter } from 'vuex-class'
 import { Image } from '~/store/images'
 import randomstring from 'randomstring'
 
 @Component
 export default class DragAndDrop extends Vue {
-  fileContext: File | FileList | null = null
+  fileContext: FileList | null = null
   elevation = 0
   color = 'gray'
 
+  @Getter('images/supportedExtensions') supportedExtensions!: string[]
+
   @Watch('fileContext')
-  onFileContextChanged(fileContext: File | FileList | null) {
+  onFileContextChanged(fileContext: FileList) {
     this.$emit('metadata', fileContext)
-    if (fileContext instanceof File) {
-      const fileReader = new FileReader()
-      fileReader.addEventListener('load', e => {
-        this.$emit('upload', {
-          id: randomstring.generate(),
-          file: fileContext,
-          dataURL: e.target?.result,
-        } as Image)
-      })
-      fileReader.readAsDataURL(fileContext)
-    } else {
-      fileContext?.forEach(file => {
+
+    if (
+      Object.values(fileContext).every(file =>
+        this.supportedExtensions.includes(file.type),
+      )
+    ) {
+      fileContext.forEach(file => {
         const fileReader = new FileReader()
         fileReader.addEventListener('load', e => {
           this.$emit('upload', {
-            id: randomstring.generate(),
+            id: randomstring.generate() + Date.now().toString(),
             file,
             dataURL: e.target?.result,
           } as Image)
         })
         fileReader.readAsDataURL(file)
+      })
+    } else {
+      this.$emit('error', {
+        code: 'file not supported',
       })
     }
   }

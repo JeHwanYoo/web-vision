@@ -1,13 +1,31 @@
 <template>
-  <v-row justify="center" align="center">
-    <v-col cols="12">
-      <image-viewer :origin="dataURLofOrigins[0]" :converted="currentDataURL" />
+  <v-row>
+    <v-col cols="3">
+      <v-btn class="d-block mb-2" color="gray" @click="back">RE-UPLOAD</v-btn>
+      <image-list :images="images"></image-list>
     </v-col>
-
-    <v-col cols="12">
-      <command-slots @command="executeCommand" />
+    <v-col cols="9">
+      <v-container class="py-0">
+        <v-row>
+          <v-col v-if="loaded">
+            <image-viewer :dataURL="currentCursorURL" />
+          </v-col>
+          <v-col v-else>
+            <v-progress-circular
+              :size="300"
+              :width="10"
+              indeterminate
+              color="primary"
+            ></v-progress-circular>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <command-slots :commandList="commandList" @execute="execute" />
+          </v-col>
+        </v-row>
+      </v-container>
     </v-col>
-    <v-col>{{ currentDataURL }}</v-col>
   </v-row>
 </template>
 
@@ -17,35 +35,32 @@ import { Image } from '~/store/images'
 import { Getter, Mutation } from 'vuex-class'
 import ImageViewer from '~/components/ImageViewer.vue'
 import CommandSlots from '~/components/CommandSlots.vue'
+import ImageList from '~/components/ImageList.vue'
+import { commandList } from '~/opencv/api/client'
 
 @Component({
-  components: { ImageViewer, CommandSlots },
+  components: { ImageViewer, CommandSlots, ImageList },
 })
 export default class EditorPage extends Vue {
-  @Getter('images/originImages') originImages!: Image[]
-  @Getter('images/convertedImages') convertedImages!: Image[]
-  @Getter('images/dataURLofOrigins') dataURLofOrigins!: string[]
-  @Getter('images/dataURLofConverted') dataURLofConverted!: string[]
-  @Getter('images/isLoading') isLoading!: boolean
-  @Getter('images/currentConvertedImage') currentConvertedImage!: Image
-  @Mutation('images/startLoading') startLoading!: (payload: number) => void
+  commandList = commandList
+  @Getter('images/images') images!: Image[]
+  @Getter('images/currentCursorURL') currentCursorURL!: string
+  @Getter('images/loaded') loaded!: boolean
+  @Getter('images/currentCursor') currentCursor!: Image
+  @Mutation('images/clearImages') clearImages!: () => void
 
   get currentDataURL() {
-    return this.currentConvertedImage
-      ? this.currentConvertedImage.dataURL
-      : null
+    return this.currentCursor ? this.currentCursor.dataURL : null
   }
 
-  async executeCommand(command: string) {
+  async execute(pythonFileName: string) {
     try {
-      this.startLoading(1)
       const newImage = await this.$store.dispatch('images/upload', {
-        image: this.originImages[0],
-        pythonFileName: command,
+        image: this.currentCursor,
+        pythonFileName,
       })
-      if (newImage) {
-        console.log(newImage)
-      } else {
+
+      if (!newImage) {
         if (process.env.NODE_ENV === 'development') {
           console.error('base64 Image error')
         }
@@ -59,9 +74,15 @@ export default class EditorPage extends Vue {
     }
   }
 
+  back() {
+    this.clearImages()
+    this.$router.replace({ name: 'index' })
+  }
+
   mounted() {
-    if (this.originImages.length === 0) this.$router.replace({ name: 'index' })
-    console.log(this.dataURLofOrigins)
+    if (this.images.length === 0) this.back()
   }
 }
 </script>
+
+<style lang="scss" scoped></style>

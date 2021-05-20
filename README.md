@@ -4,11 +4,16 @@ It is an open source project to provide opencv function on the web.
 
 ## Build Setup
 
+![built with nuxt](https://ko.nuxtjs.org/logos/built-with-nuxt.svg)
+
 This project was created using Nuxt.
 
 ```bash
 # install dependencies
 $ npm install
+
+# migrate prisma (SQLite)
+$ npx prisma migrate
 
 # serve with hot reload at localhost:3000
 $ npm run dev
@@ -41,10 +46,18 @@ So, python and opencv-python must be properly installed on the server and it wil
 
 If you are hosting online, consider the cost issue.
 
+## Schema of OpenCV command
+
+In 'opencv' directory, you can expand opencv function. Basically, I haven't implemented many features yet. More features will be added in future versions, and you can add your own.
+
+If necessary, it would be a good idea to make the directory a Git submodule.
+
+In 'opencv/api/client.ts' file, defines the interface of the opencv function to be executed on the client.
+
 ## Main Development Progress
 
 - [x] Basic Image Processing (0.1.x)
-- [ ] Multiple File Support (0.2.x)
+- [ ] Composite of Two or More Images (0.2.x)
 - [ ] Histogram (0.3.x)
 - [ ] Filtering (0.4.x)
 - [ ] Finding Edges, Corner Points, ETC... (0.5.x)
@@ -52,3 +65,9 @@ If you are hosting online, consider the cost issue.
 - [ ] Webcam Support (0.7.x)
 
 The plan can change at any time.
+
+## Preview
+
+## Version History
+
+See CHANGELOG.md

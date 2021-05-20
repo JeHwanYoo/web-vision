@@ -5,47 +5,48 @@
       </v-img>
     </v-col>
     <v-col cols="8">
-      <drag-and-drop @upload="uploaded" @metadata="metadata" />
+      <drag-and-drop @upload="upload" @metadata="metadata" @error="error" />
     </v-col>
     <v-col cols="8">
-      <image-uploader @upload="uploaded" @metadata="metadata" />
+      <image-uploader @upload="upload" @metadata="metadata" />
     </v-col>
+    <v-snackbar v-model="snackbar" :timeout="2000">
+      Supported extensions: {{ supportedExtensions }}
+    </v-snackbar>
   </v-row>
 </template>
 
 <script lang="ts">
 import DragAndDrop from '~/components/DragAndDrop.vue'
 import ImageUploader from '~/components/ImageUploader.vue'
-import ImageViewer from '~/components/ImageViewer.vue'
 import { Vue, Component } from 'vue-property-decorator'
 import { Image } from '~/store/images'
 import { Getter } from 'vuex-class'
 
 @Component({
-  components: { DragAndDrop, ImageUploader, ImageViewer },
+  components: { DragAndDrop, ImageUploader },
 })
 export default class IndexPage extends Vue {
   expected = 0
+  snackbar = false
 
-  @Getter('images/originImages') originImages!: Image[]
+  @Getter('images/images') images!: Image[]
+  @Getter('images/supportedExtensions') supportedExtensions!: string[]
 
-  uploaded(image: Image) {
-    this.$store.commit('images/pushOriginImages', image)
-    if (this.expected > 0 && this.expected === this.originImages.length) {
+  upload(image: Image) {
+    this.$store.commit('images/pushImage', image)
+    if (this.expected > 0 && this.expected === this.images.length) {
+      this.$store.commit('images/setCursor', this.images[0])
       this.$router.replace({ name: 'editor' })
     }
   }
 
-  metadata(fileContext: File | File[]) {
-    if (fileContext instanceof File) {
-      this.expected = 1
-    } else if (fileContext.length > 0) {
-      this.expected = fileContext.length
-    }
+  metadata(fileContext: FileList) {
+    this.expected = fileContext.length
   }
 
-  mounted() {
-    console.log(this.$route)
+  error(error: any) {
+    this.snackbar = error.code === 'file not supported'
   }
 }
 </script>

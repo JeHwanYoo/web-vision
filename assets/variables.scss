@@ -2,3 +2,12 @@
 //
 // The variables you want to modify
 // $font-size-root: 20px;
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
