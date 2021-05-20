@@ -1,5 +1,5 @@
 import { GetterTree, MutationTree, ActionTree } from 'vuex'
-import randomstring from 'randomstring'
+import md5 from 'crypto-js/md5'
 
 export interface Image {
   id: string
@@ -95,7 +95,7 @@ export const actions: ActionTree<State, any> = {
       })
       const convertedDataURL = result.data.join('')
       const newImage = {
-        id: randomstring.generate(),
+        id: md5(convertedDataURL),
         file: image.file,
         dataURL: convertedDataURL,
         parent: image,
