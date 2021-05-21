@@ -71,22 +71,25 @@ async function processing(
     const prisma = new PrismaClient()
     const image: Image = req.body.image
     const pythonFileName: string = req.body.pythonFileName
+    req.newImgID = randomstring.generate() + Date.now().toString()
     if (image && pythonFileName) {
       const output: string[] = []
 
       const cached = await prisma.image.findFirst({
-        select: { id: true, dataURL: true, parent_id: true, script_by: true },
+        select: { id: true, dataURL: true, parent_id: true },
         where: { parent_id: image.id, script_by: pythonFileName },
       })
 
       if (cached) {
         req.cached = true
         req.image = cached
+        req.newImgID = req.image.id
         next()
       } else {
-        const r = exec(
-          `python3 ${resolve(__dirname, '..', pythonFileName)} ${image.id}`,
-        )
+        const command = `python3 ${resolve(__dirname, '..', pythonFileName)} ${
+          image.id
+        } ${req.newImgID}`
+        const r = exec(command)
         let failed = false
         if (r.stdout && r.stderr) {
           r.stdout.on('data', chunk => {
@@ -109,14 +112,14 @@ async function processing(
               prisma.$disconnect()
               errorHandling(res, 400, 'Bad Request', output.join(''))
             } else {
-              prisma.$disconnect()
-              req.cached = false
-              req.image = {
-                id: randomstring.generate() + Date.now().toString(),
-                dataURL: output.join(''),
-                parent_id: image.id,
-                script_by: pythonFileName,
+              // The result is the same as itself
+              if (output.join('').trimEnd() === 'itself') {
+                req.newImgID = image.id
+                req.itself = true
               }
+              req.cached = false
+
+              prisma.$disconnect()
               next()
             }
           })
@@ -145,38 +148,18 @@ async function processing(
  */
 async function sendOutput(req: express.Request, res: express.Response) {
   try {
-    if (!req.cached) {
+    if (!req.cached || req.itself) {
       const prisma = new PrismaClient()
-      // create a new image data
-      await prisma.image.create({
-        data: {
-          id: req.image.id,
-          dataURL: req.image.dataURL,
-          hash: sha256(req.image.dataURL).toString(),
-          parent_id: req.image.parent_id,
-          script_by: req.image.script_by,
-        },
+      req.image = await prisma.image.findUnique({
+        select: { id: true, dataURL: true, parent_id: true },
+        where: { id: req.newImgID },
       })
       prisma.$disconnect()
     }
 
     res.send(req.image)
   } catch (error) {
-    // The conversion result is the same.
-    if (error.code === 'P2002') {
-      const prisma = new PrismaClient()
-
-      const cached = await prisma.image.findUnique({
-        select: { id: true, dataURL: true, parent_id: true, script_by: true },
-        where: { hash: sha256(req.image.dataURL).toString() },
-      })
-
-      prisma.$disconnect()
-
-      res.send(cached)
-    } else {
-      errorHandling(res, 400, 'Bad Request', error, 500)
-    }
+    errorHandling(res, 400, 'Bad Request', error, 500)
   }
 }
 

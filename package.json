@@ -1,6 +1,6 @@
 {
   "name": "web-vison",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "It is an open source project to provide opencv function on the web.",
   "license": "MIT",
   "private": false,
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/JeHwanYoo/web-vision"
   },
   "dependencies": {
     "@nuxtjs/axios": "^5.13.4",

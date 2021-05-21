@@ -3,18 +3,20 @@ import sys
 import os
 sys.path.append(os.path.dirname(__file__) + '/library')
 
-from b64 import Base64ImageToMatrix
-from b64 import MatrixToBase64Image
-from b64 import Base64ImageToDataURL
+from b64 import base64_image_to_matrix
+from b64 import matrix_to_base64_image
+from b64 import base64_image_to_data_URL
+from b64 import split_data_url
 from readimg import readimg
+from saveimg import saveimg
 
 if __name__ == '__main__':
   img = readimg(sys.argv[1])
+  new_img_id = sys.argv[2]
   data_url = img[2]
-  img_ext_part, others = data_url.split(';')
-  deco1, img_ext = img_ext_part.split('/')
-  deco2, img_base64 = others.split(',')
-  img_gray = Base64ImageToMatrix(img_base64, cv2.IMREAD_GRAYSCALE)
+  prefix, img_ext, infix, img_base64 = split_data_url(data_url)
+  img_gray = base64_image_to_matrix(img_base64, cv2.IMREAD_GRAYSCALE)
   ret, dst = cv2.threshold(img_gray, 120, 255, cv2.THRESH_BINARY)
-  img_gray_base64 = MatrixToBase64Image('.' + img_ext, dst)
-  print(Base64ImageToDataURL(deco1, deco2, img_ext, img_gray_base64.decode('utf-8')))
+  img_threshold_base64 = matrix_to_base64_image('.' + img_ext, dst)
+  new_data_url = base64_image_to_data_URL(prefix, img_ext, infix, img_threshold_base64)
+  saveimg(new_img_id, new_data_url, img[0], __file__)
