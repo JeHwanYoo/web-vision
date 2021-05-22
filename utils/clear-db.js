@@ -1,11 +1,11 @@
-// const { PrismaClient } = require('@prisma/client')
+const { PrismaClient } = require('@prisma/client')
 
-// async function main() {
-//   const prisma = new PrismaClient()
+async function main() {
+  const prisma = new PrismaClient()
 
-//   await prisma.image.deleteMany()
+  await prisma.image.deleteMany()
 
-//   prisma.$disconnect()
-// }
+  prisma.$disconnect()
+}
 
-// main()
+main()

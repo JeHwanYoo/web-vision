@@ -6,6 +6,7 @@ import { PrismaClient } from '@prisma/client'
 import { Image } from '~/store/images'
 import sha256 from 'crypto-js/sha256'
 import randomstring from 'randomstring'
+import { join } from '@prisma/client/runtime'
 
 config()
 
@@ -21,8 +22,8 @@ app.use(
  * save an image middleware (using cache)
  */
 async function saveImage(req: express.Request, res: express.Response) {
+  const prisma = new PrismaClient()
   try {
-    const prisma = new PrismaClient()
     const image: Image = req.body.image
     const cache = await prisma.image.findUnique({
       where: { hash: sha256(image.dataURL).toString() },
@@ -54,7 +55,7 @@ async function saveImage(req: express.Request, res: express.Response) {
       })
     }
   } catch (error) {
-    console.log(error)
+    prisma.$disconnect()
     errorHandling(res, 400, 'Bad Request', error, 500)
   }
 }
@@ -67,8 +68,8 @@ async function processing(
   res: express.Response,
   next: express.NextFunction,
 ) {
+  const prisma = new PrismaClient()
   try {
-    const prisma = new PrismaClient()
     const image: Image = req.body.image
     const pythonFileName: string = req.body.pythonFileName
     req.newImgID = randomstring.generate() + Date.now().toString()
@@ -112,10 +113,12 @@ async function processing(
               prisma.$disconnect()
               errorHandling(res, 400, 'Bad Request', output.join(''))
             } else {
-              // The result is the same as itself
-              if (output.join('').trimEnd() === 'itself') {
+              const joined = output.join('').trimEnd()
+              req.itself = joined === 'itself'
+              if (req.itself) {
                 req.newImgID = image.id
-                req.itself = true
+              } else if (joined) {
+                req.newImgID = joined
               }
               req.cached = false
 
@@ -139,6 +142,7 @@ async function processing(
       )
     }
   } catch (error) {
+    prisma.$disconnect()
     errorHandling(res, 400, 'Bad Request', error, 500)
   }
 }
@@ -147,9 +151,9 @@ async function processing(
  * sending output middleware
  */
 async function sendOutput(req: express.Request, res: express.Response) {
+  const prisma = new PrismaClient()
   try {
     if (!req.cached || req.itself) {
-      const prisma = new PrismaClient()
       req.image = await prisma.image.findUnique({
         select: { id: true, dataURL: true, parent_id: true },
         where: { id: req.newImgID },
@@ -159,6 +163,7 @@ async function sendOutput(req: express.Request, res: express.Response) {
 
     res.send(req.image)
   } catch (error) {
+    prisma.$disconnect()
     errorHandling(res, 400, 'Bad Request', error, 500)
   }
 }
